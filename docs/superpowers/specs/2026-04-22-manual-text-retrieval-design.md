@@ -29,8 +29,8 @@ After this branch, the user should be able to paste a piece of raw text into the
 - Manual submission of a raw text block
 - Simple, explainable chunking rules
 - Real embedding calls through SiliconFlow's OpenAI-compatible API
-- Model: `Qwen/Qwen3-Embedding-8B`
-- Embedding dimension: `4096`
+- Model: `Qwen/Qwen3-Embedding-0.6B`
+- Embedding dimension: `1024`
 - pgvector-backed semantic search scoped to one experiment
 - Visible display of:
   - original text
@@ -210,8 +210,8 @@ Required configuration:
 
 - `EMBEDDING_API_KEY`
 - `EMBEDDING_BASE_URL`
-- `EMBEDDING_MODEL=Qwen/Qwen3-Embedding-8B`
-- `EMBEDDING_DIMENSION=4096`
+- `EMBEDDING_MODEL=Qwen/Qwen3-Embedding-0.6B`
+- `EMBEDDING_DIMENSION=1024`
 - `VECTOR_STORE_TABLE=public.vector_store`
 
 The backend uses:
@@ -242,7 +242,7 @@ Input:
 5. For each chunk:
    - build `TextSegment`
    - attach metadata with experiment and chunk identity
-   - generate embedding using `Qwen/Qwen3-Embedding-8B`
+   - generate embedding using `Qwen/Qwen3-Embedding-0.6B`
    - add to `vector_store`
 6. Update `chunk_count` on the experiment.
 7. Return the experiment summary and chunk list.
