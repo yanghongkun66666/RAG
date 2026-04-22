@@ -82,6 +82,7 @@ It has three visible zones:
    - question input
    - topK input
    - retrieve button
+   - retrieval is scoped to the current indexed experiment automatically
    - ordered result list with score, chunk index, and chunk content
 
 This page must make the learning chain explicit.
@@ -267,9 +268,13 @@ Response payload should include:
 
 Input:
 
-- `experimentId` required
+- `experimentId` required in the backend request
 - `question` required
 - `topK` optional, default `3`
+
+The frontend should not ask the user to type `experimentId`.
+Instead, after a successful indexing request, the page stores the returned `experimentId` as the current experiment in page state.
+Subsequent retrieval requests automatically send that value.
 
 ### Processing
 
@@ -310,6 +315,7 @@ The branch must make at least these failure paths observable:
 ### Missing experiment
 
 - retrieval request returns a clear business error
+- the frontend should also block retrieval when no current experiment has been indexed on the page yet
 
 ### Missing embedding configuration
 
