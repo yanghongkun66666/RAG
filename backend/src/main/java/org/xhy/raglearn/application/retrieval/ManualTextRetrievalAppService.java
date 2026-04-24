@@ -1,6 +1,5 @@
 package org.xhy.raglearn.application.retrieval;
 
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.xhy.raglearn.application.retrieval.dto.ManualTextChunkView;
 import org.xhy.raglearn.application.retrieval.dto.ManualTextIndexCommand;
@@ -16,7 +15,6 @@ import org.xhy.raglearn.domain.retrieval.service.SimpleTextChunker;
 
 import java.util.List;
 
-@Service
 public class ManualTextRetrievalAppService {
 
     private final ManualTextExperimentRepository experimentRepository;
@@ -51,15 +49,13 @@ public class ManualTextRetrievalAppService {
         }
 
         experimentRepository.updateChunkCount(createdExperiment.id(), chunks.size());
-        ManualTextExperiment experiment = experimentRepository.findById(createdExperiment.id());
-        if (experiment == null) {
-            experiment = new ManualTextExperiment(
-                    createdExperiment.id(),
-                    createdExperiment.title(),
-                    createdExperiment.rawText(),
-                    chunks.size()
-            );
-        }
+        ManualTextExperiment experiment = experimentRepository.findById(createdExperiment.id())
+                .orElseGet(() -> new ManualTextExperiment(
+                        createdExperiment.id(),
+                        createdExperiment.title(),
+                        createdExperiment.rawText(),
+                        chunks.size()
+                ));
 
         return new ManualTextIndexResult(
                 experiment.id(),

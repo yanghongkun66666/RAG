@@ -10,6 +10,7 @@ import org.xhy.raglearn.domain.retrieval.repository.ManualTextExperimentReposito
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.util.Optional;
 
 @Repository
 public class JdbcManualTextExperimentRepository implements ManualTextExperimentRepository {
@@ -62,7 +63,7 @@ public class JdbcManualTextExperimentRepository implements ManualTextExperimentR
     }
 
     @Override
-    public ManualTextExperiment findById(long experimentId) {
+    public Optional<ManualTextExperiment> findById(long experimentId) {
         return jdbcTemplate.query(
                 """
                 SELECT id, title, raw_text, chunk_count
@@ -71,6 +72,6 @@ public class JdbcManualTextExperimentRepository implements ManualTextExperimentR
                 """,
                 ROW_MAPPER,
                 experimentId
-        ).stream().findFirst().orElse(null);
+        ).stream().findFirst();
     }
 }

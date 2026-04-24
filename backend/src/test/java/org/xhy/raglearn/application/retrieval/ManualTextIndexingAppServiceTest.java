@@ -5,6 +5,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.stereotype.Service;
 import org.xhy.raglearn.application.retrieval.dto.ManualTextChunkView;
 import org.xhy.raglearn.application.retrieval.dto.ManualTextIndexCommand;
 import org.xhy.raglearn.application.retrieval.dto.ManualTextIndexResult;
@@ -18,7 +19,9 @@ import org.xhy.raglearn.domain.retrieval.repository.ManualTextExperimentReposito
 import org.xhy.raglearn.domain.retrieval.service.SimpleTextChunker;
 
 import java.util.List;
+import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
@@ -44,6 +47,11 @@ class ManualTextIndexingAppServiceTest {
     private ManualTextRetrievalAppService appService;
 
     @Test
+    void staysAsPlainTaskTwoClassWithoutSpringServiceRegistration() {
+        assertFalse(ManualTextRetrievalAppService.class.isAnnotationPresent(Service.class));
+    }
+
+    @Test
     void indexesManualTextAndReturnsPersistedChunks() {
         ManualTextIndexCommand command = new ManualTextIndexCommand(
                 "Intro Notes",
@@ -62,9 +70,9 @@ class ManualTextIndexingAppServiceTest {
         when(experimentRepository.create("Intro Notes", command.rawText())).thenReturn(createdExperiment);
         when(chunker.chunk(command.rawText())).thenReturn(drafts);
         when(chunkRepository.saveAll(11L, drafts)).thenReturn(persistedChunks);
-        when(experimentRepository.findById(11L)).thenReturn(
+        when(experimentRepository.findById(11L)).thenReturn(Optional.of(
                 new ManualTextExperiment(11L, "Intro Notes", command.rawText(), 2)
-        );
+        ));
 
         ManualTextIndexResult result = appService.indexManualText(command);
 

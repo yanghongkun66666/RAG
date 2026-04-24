@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS manual_text_experiment (
 
 CREATE TABLE IF NOT EXISTS manual_text_chunk (
     id BIGSERIAL PRIMARY KEY,
-    experiment_id BIGINT NOT NULL REFERENCES manual_text_experiment (id),
+    experiment_id BIGINT NOT NULL REFERENCES manual_text_experiment (id) ON DELETE CASCADE,
     chunk_index INTEGER NOT NULL,
     content TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
