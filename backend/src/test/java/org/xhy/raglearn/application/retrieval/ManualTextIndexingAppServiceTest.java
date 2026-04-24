@@ -6,6 +6,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.xhy.raglearn.application.retrieval.dto.ManualTextChunkView;
 import org.xhy.raglearn.application.retrieval.dto.ManualTextIndexCommand;
 import org.xhy.raglearn.application.retrieval.dto.ManualTextIndexResult;
@@ -18,6 +19,7 @@ import org.xhy.raglearn.domain.retrieval.repository.ManualTextChunkRepository;
 import org.xhy.raglearn.domain.retrieval.repository.ManualTextExperimentRepository;
 import org.xhy.raglearn.domain.retrieval.service.SimpleTextChunker;
 
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,8 +49,14 @@ class ManualTextIndexingAppServiceTest {
     private ManualTextRetrievalAppService appService;
 
     @Test
-    void staysAsPlainTaskTwoClassWithoutSpringServiceRegistration() {
+    void staysAsPlainTaskTwoClassWithoutSpringRuntimeAnnotations() throws NoSuchMethodException {
+        Method indexMethod = ManualTextRetrievalAppService.class.getMethod(
+                "indexManualText",
+                ManualTextIndexCommand.class
+        );
+
         assertFalse(ManualTextRetrievalAppService.class.isAnnotationPresent(Service.class));
+        assertFalse(indexMethod.isAnnotationPresent(Transactional.class));
     }
 
     @Test
@@ -103,5 +111,27 @@ class ManualTextIndexingAppServiceTest {
 
         assertEquals("rawText must not be blank", exception.getMessage());
         verifyNoInteractions(experimentRepository, chunkRepository, vectorGateway, chunker);
+    }
+
+    @Test
+    void failsFastWhenExperimentCannotBeReloadedAfterUpdatingChunkCount() {
+        ManualTextIndexCommand command = new ManualTextIndexCommand("Intro Notes", "alpha beta");
+        ManualTextExperiment createdExperiment = new ManualTextExperiment(11L, "Intro Notes", command.rawText(), 0);
+        List<ManualTextChunkDraft> drafts = List.of(new ManualTextChunkDraft(0, "alpha beta"));
+        List<ManualTextChunk> persistedChunks = List.of(new ManualTextChunk(101L, 11L, 0, "alpha beta"));
+
+        when(experimentRepository.create("Intro Notes", command.rawText())).thenReturn(createdExperiment);
+        when(chunker.chunk(command.rawText())).thenReturn(drafts);
+        when(chunkRepository.saveAll(11L, drafts)).thenReturn(persistedChunks);
+        when(experimentRepository.findById(11L)).thenReturn(Optional.empty());
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> appService.indexManualText(command)
+        );
+
+        assertEquals("Experiment 11 could not be reloaded after indexing.", exception.getMessage());
+        verify(experimentRepository).updateChunkCount(11L, 1);
+        verify(experimentRepository).findById(11L);
     }
 }

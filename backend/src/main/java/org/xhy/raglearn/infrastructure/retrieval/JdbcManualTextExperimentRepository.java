@@ -9,7 +9,6 @@ import org.xhy.raglearn.domain.retrieval.model.ManualTextExperiment;
 import org.xhy.raglearn.domain.retrieval.repository.ManualTextExperimentRepository;
 
 import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.util.Optional;
 
 @Repository
@@ -37,7 +36,7 @@ public class JdbcManualTextExperimentRepository implements ManualTextExperimentR
                     INSERT INTO manual_text_experiment (title, raw_text, chunk_count)
                     VALUES (?, ?, ?)
                     """,
-                    Statement.RETURN_GENERATED_KEYS
+                    new String[]{"id"}
             );
             statement.setString(1, title);
             statement.setString(2, rawText);

@@ -10,7 +10,6 @@ import org.xhy.raglearn.domain.retrieval.model.ManualTextChunkDraft;
 import org.xhy.raglearn.domain.retrieval.repository.ManualTextChunkRepository;
 
 import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,7 +41,7 @@ public class JdbcManualTextChunkRepository implements ManualTextChunkRepository 
                         INSERT INTO manual_text_chunk (experiment_id, chunk_index, content)
                         VALUES (?, ?, ?)
                         """,
-                        Statement.RETURN_GENERATED_KEYS
+                        new String[]{"id"}
                 );
                 statement.setLong(1, experimentId);
                 statement.setInt(2, draft.chunkIndex());

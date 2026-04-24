@@ -1,6 +1,5 @@
 package org.xhy.raglearn.application.retrieval;
 
-import org.springframework.transaction.annotation.Transactional;
 import org.xhy.raglearn.application.retrieval.dto.ManualTextChunkView;
 import org.xhy.raglearn.application.retrieval.dto.ManualTextIndexCommand;
 import org.xhy.raglearn.application.retrieval.dto.ManualTextIndexResult;
@@ -34,7 +33,6 @@ public class ManualTextRetrievalAppService {
         this.chunker = chunker;
     }
 
-    @Transactional
     public ManualTextIndexResult indexManualText(ManualTextIndexCommand command) {
         if (command.rawText() == null || command.rawText().isBlank()) {
             throw new BusinessException("rawText must not be blank");
@@ -50,11 +48,8 @@ public class ManualTextRetrievalAppService {
 
         experimentRepository.updateChunkCount(createdExperiment.id(), chunks.size());
         ManualTextExperiment experiment = experimentRepository.findById(createdExperiment.id())
-                .orElseGet(() -> new ManualTextExperiment(
-                        createdExperiment.id(),
-                        createdExperiment.title(),
-                        createdExperiment.rawText(),
-                        chunks.size()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Experiment %d could not be reloaded after indexing.".formatted(createdExperiment.id())
                 ));
 
         return new ManualTextIndexResult(

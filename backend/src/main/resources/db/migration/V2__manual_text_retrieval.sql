@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS manual_text_chunk (
     experiment_id BIGINT NOT NULL REFERENCES manual_text_experiment (id) ON DELETE CASCADE,
     chunk_index INTEGER NOT NULL,
     content TEXT NOT NULL,
+    CONSTRAINT uk_manual_text_chunk_experiment_chunk_index UNIQUE (experiment_id, chunk_index),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
