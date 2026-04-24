@@ -16,6 +16,12 @@ import org.xhy.raglearn.common.api.ApiResponse;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(BusinessException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<Void> handleBusinessException(BusinessException exception) {
+        return ApiResponse.failure("BUSINESS_ERROR", exception.getMessage());
+    }
+
     @ExceptionHandler({
             MethodArgumentNotValidException.class,
             BindException.class,
@@ -32,4 +38,3 @@ public class GlobalExceptionHandler {
         return ApiResponse.failure("INTERNAL_ERROR", exception.getMessage());
     }
 }
-
