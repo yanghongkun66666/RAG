@@ -15,6 +15,15 @@ public class SimpleTextChunker {
     }
 
     public SimpleTextChunker(int chunkSize, int overlap) {
+        if (chunkSize <= 0) {
+            throw new IllegalArgumentException("chunkSize must be greater than 0");
+        }
+        if (overlap < 0) {
+            throw new IllegalArgumentException("overlap must be greater than or equal to 0");
+        }
+        if (overlap >= chunkSize) {
+            throw new IllegalArgumentException("overlap must be less than chunkSize");
+        }
         this.chunkSize = chunkSize;
         this.overlap = overlap;
     }
@@ -29,7 +38,7 @@ public class SimpleTextChunker {
         int chunkIndex = 0;
 
         for (String paragraph : normalized.split("(?:\\n\\s*\\n)+")) {
-            String content = paragraph.trim();
+            String content = normalizeContent(paragraph);
             if (content.isEmpty()) {
                 continue;
             }
@@ -42,7 +51,7 @@ public class SimpleTextChunker {
             int step = Math.max(1, chunkSize - overlap);
             for (int start = 0; start < content.length(); start += step) {
                 int end = Math.min(content.length(), start + chunkSize);
-                String window = content.substring(start, end);
+                String window = normalizeContent(content.substring(start, end));
                 if (!window.isBlank()) {
                     chunks.add(new ManualTextChunkDraft(chunkIndex++, window));
                 }
@@ -53,5 +62,9 @@ public class SimpleTextChunker {
         }
 
         return List.copyOf(chunks);
+    }
+
+    private String normalizeContent(String content) {
+        return content.trim();
     }
 }
