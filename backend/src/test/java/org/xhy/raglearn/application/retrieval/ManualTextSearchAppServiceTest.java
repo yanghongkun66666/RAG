@@ -137,6 +137,10 @@ class ManualTextSearchAppServiceTest {
         }
 
         @Override
+        public void deleteByExperimentId(long experimentId) {
+        }
+
+        @Override
         public List<ChunkSearchMatch> search(long experimentId, String question, int topK) {
             this.lastExperimentId = experimentId;
             this.lastQuestion = question;

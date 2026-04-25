@@ -9,5 +9,7 @@ public interface ManualTextVectorGateway {
 
     void storeChunk(ManualTextChunk chunk);
 
+    void deleteByExperimentId(long experimentId);
+
     List<ChunkSearchMatch> search(long experimentId, String question, int topK);
 }

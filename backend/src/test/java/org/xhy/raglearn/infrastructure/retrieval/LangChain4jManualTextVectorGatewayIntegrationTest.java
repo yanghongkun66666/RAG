@@ -12,7 +12,6 @@ import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -27,8 +26,6 @@ class LangChain4jManualTextVectorGatewayIntegrationTest {
     private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("pgvector/pgvector:pg16");
 
     private static JdbcTemplate jdbcTemplate;
-    private static EmbeddingStore<TextSegment> embeddingStore;
-    private static LangChain4jManualTextVectorGateway gateway;
 
     @BeforeAll
     static void setUp() {
@@ -47,23 +44,26 @@ class LangChain4jManualTextVectorGatewayIntegrationTest {
                 .migrate();
 
         jdbcTemplate = new JdbcTemplate(dataSource);
-
-        EmbeddingProperties properties = new EmbeddingProperties();
-        properties.setApiKey("test-key");
-        properties.setDimension(4);
-
-        embeddingStore = new EmbeddingConfig().embeddingStore(dataSource, properties, "public.vector_store");
-        gateway = new LangChain4jManualTextVectorGateway(embeddingStore, new StubEmbeddingModelFactory());
-    }
-
-    @BeforeEach
-    void cleanVectorStore() {
-        jdbcTemplate.update("TRUNCATE TABLE public.vector_store");
     }
 
     @AfterAll
     static void tearDown() {
         POSTGRES.stop();
+    }
+
+    @Test
+    void flyway_creates_vector_store_table_before_embedding_store_initialization() {
+        Integer vectorStoreTable = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.tables
+                WHERE table_schema = 'public'
+                  AND table_name = 'vector_store'
+                """,
+                Integer.class
+        );
+
+        assertThat(vectorStoreTable).isEqualTo(1);
     }
 
     @Test
@@ -79,6 +79,21 @@ class LangChain4jManualTextVectorGatewayIntegrationTest {
         );
 
         assertThat(vectorStoreTable).isEqualTo(1);
+        jdbcTemplate.update("TRUNCATE TABLE public.vector_store");
+
+        EmbeddingProperties properties = new EmbeddingProperties();
+        properties.setApiKey("test-key");
+        properties.setDimension(1024);
+
+        EmbeddingStore<TextSegment> embeddingStore =
+                new EmbeddingConfig().embeddingStore(dataSource(), properties, "public.vector_store");
+        LangChain4jManualTextVectorGateway gateway =
+                new LangChain4jManualTextVectorGateway(
+                        embeddingStore,
+                        new StubEmbeddingModelFactory(),
+                        dataSource(),
+                        "public.vector_store"
+                );
 
         gateway.storeChunk(new ManualTextChunk(101L, 1L, 0, "pgvector stores embeddings"));
         gateway.storeChunk(new ManualTextChunk(202L, 2L, 0, "pgvector stores embeddings"));
@@ -91,6 +106,14 @@ class LangChain4jManualTextVectorGatewayIntegrationTest {
                     assertThat(match.chunkIndex()).isEqualTo(0);
                     assertThat(match.content()).isEqualTo("pgvector stores embeddings");
                 });
+    }
+
+    private static DataSource dataSource() {
+        return new DriverManagerDataSource(
+                POSTGRES.getJdbcUrl(),
+                POSTGRES.getUsername(),
+                POSTGRES.getPassword()
+        );
     }
 
     private static final class StubEmbeddingModelFactory extends EmbeddingModelFactory {
@@ -111,7 +134,7 @@ class LangChain4jManualTextVectorGatewayIntegrationTest {
             properties.setApiKey("test-key");
             properties.setBaseUrl("http://localhost");
             properties.setModel("test-model");
-            properties.setDimension(4);
+            properties.setDimension(1024);
             return properties;
         }
     }
@@ -134,14 +157,18 @@ class LangChain4jManualTextVectorGatewayIntegrationTest {
         }
 
         private static float[] vectorFor(String text) {
+            float[] vector = new float[1024];
             String normalized = text.toLowerCase();
             if (normalized.contains("pgvector")) {
-                return new float[]{1.0f, 0.0f, 0.0f, 0.0f};
+                vector[0] = 1.0f;
+                return vector;
             }
             if (normalized.contains("spring")) {
-                return new float[]{0.0f, 1.0f, 0.0f, 0.0f};
+                vector[1] = 1.0f;
+                return vector;
             }
-            return new float[]{0.0f, 0.0f, 1.0f, 0.0f};
+            vector[2] = 1.0f;
+            return vector;
         }
     }
 }

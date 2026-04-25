@@ -27,6 +27,8 @@ public class EmbeddingConfig {
                 .datasource(dataSource)
                 .table(vectorStoreTable)
                 .dimension(embeddingProperties.getDimension())
+                .createTable(false)
+                .skipCreateVectorExtension(true)
                 .metadataStorageConfig(DefaultMetadataStorageConfig.builder()
                         .storageMode(MetadataStorageMode.COMBINED_JSONB)
                         .columnDefinitions(List.of("metadata JSONB NULL"))

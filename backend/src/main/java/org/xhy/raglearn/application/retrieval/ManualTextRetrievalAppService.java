@@ -49,25 +49,30 @@ public class ManualTextRetrievalAppService {
         List<ManualTextChunkDraft> drafts = chunker.chunk(command.rawText());
         List<ManualTextChunk> chunks = chunkRepository.saveAll(createdExperiment.id(), drafts);
 
-        for (ManualTextChunk chunk : chunks) {
-            vectorGateway.storeChunk(chunk);
+        try {
+            for (ManualTextChunk chunk : chunks) {
+                vectorGateway.storeChunk(chunk);
+            }
+
+            experimentRepository.updateChunkCount(createdExperiment.id(), chunks.size());
+            ManualTextExperiment experiment = experimentRepository.findById(createdExperiment.id())
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Experiment %d could not be reloaded after indexing.".formatted(createdExperiment.id())
+                    ));
+
+            return new ManualTextIndexResult(
+                    experiment.id(),
+                    experiment.title(),
+                    experiment.rawText(),
+                    experiment.chunkCount(),
+                    chunks.stream()
+                            .map(chunk -> new ManualTextChunkView(chunk.id(), chunk.chunkIndex(), chunk.content()))
+                            .toList()
+            );
+        } catch (RuntimeException exception) {
+            compensateVectorRows(createdExperiment.id(), exception);
+            throw exception;
         }
-
-        experimentRepository.updateChunkCount(createdExperiment.id(), chunks.size());
-        ManualTextExperiment experiment = experimentRepository.findById(createdExperiment.id())
-                .orElseThrow(() -> new IllegalStateException(
-                        "Experiment %d could not be reloaded after indexing.".formatted(createdExperiment.id())
-                ));
-
-        return new ManualTextIndexResult(
-                experiment.id(),
-                experiment.title(),
-                experiment.rawText(),
-                experiment.chunkCount(),
-                chunks.stream()
-                        .map(chunk -> new ManualTextChunkView(chunk.id(), chunk.chunkIndex(), chunk.content()))
-                        .toList()
-        );
     }
 
     public ManualTextSearchResult searchManualText(ManualTextSearchCommand command) {
@@ -92,5 +97,13 @@ public class ManualTextRetrievalAppService {
                         ))
                         .toList()
         );
+    }
+
+    private void compensateVectorRows(long experimentId, RuntimeException originalException) {
+        try {
+            vectorGateway.deleteByExperimentId(experimentId);
+        } catch (RuntimeException cleanupException) {
+            originalException.addSuppressed(cleanupException);
+        }
     }
 }
