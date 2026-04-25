@@ -76,6 +76,20 @@ class ManualTextSearchAppServiceTest {
                 .hasMessageContaining("question");
     }
 
+    @Test
+    void rejects_missing_experiment() {
+        ManualTextRetrievalAppService service = new ManualTextRetrievalAppService(
+                new InMemoryExperimentRepository(),
+                new InMemoryChunkRepository(),
+                new RecordingVectorGateway(),
+                new SimpleTextChunker(200, 20)
+        );
+
+        assertThatThrownBy(() -> service.searchManualText(new ManualTextSearchCommand(99L, "Which component stores embeddings?", 3)))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("does not exist");
+    }
+
     private static final class InMemoryExperimentRepository implements ManualTextExperimentRepository {
         private final Map<Long, ManualTextExperiment> store = new LinkedHashMap<>();
         private long sequence = 1L;
