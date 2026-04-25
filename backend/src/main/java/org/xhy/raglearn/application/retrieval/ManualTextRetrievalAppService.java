@@ -2,6 +2,7 @@ package org.xhy.raglearn.application.retrieval;
 
 import java.util.List;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.xhy.raglearn.application.retrieval.dto.ManualTextChunkView;
 import org.xhy.raglearn.application.retrieval.dto.ManualTextIndexCommand;
@@ -38,6 +39,7 @@ public class ManualTextRetrievalAppService {
         this.chunker = chunker;
     }
 
+    @Transactional
     public ManualTextIndexResult indexManualText(ManualTextIndexCommand command) {
         if (command.rawText() == null || command.rawText().isBlank()) {
             throw new BusinessException("rawText must not be blank");
