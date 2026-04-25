@@ -38,3 +38,12 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n"
+
+raglearn:
+  embedding:
+    api-key: ${EMBEDDING_API_KEY:}
+    base-url: ${EMBEDDING_BASE_URL:https://api.siliconflow.cn/v1}
+    model: ${EMBEDDING_MODEL:Qwen/Qwen3-Embedding-0.6B}
+    dimension: ${EMBEDDING_DIMENSION:1024}
+  vector-store:
+    table: ${VECTOR_STORE_TABLE:public.vector_store}
