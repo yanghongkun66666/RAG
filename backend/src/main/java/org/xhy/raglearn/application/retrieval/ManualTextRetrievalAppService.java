@@ -1,8 +1,14 @@
 package org.xhy.raglearn.application.retrieval;
 
+import java.util.List;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.xhy.raglearn.application.retrieval.dto.ManualTextChunkView;
 import org.xhy.raglearn.application.retrieval.dto.ManualTextIndexCommand;
 import org.xhy.raglearn.application.retrieval.dto.ManualTextIndexResult;
+import org.xhy.raglearn.application.retrieval.dto.ManualTextSearchCommand;
+import org.xhy.raglearn.application.retrieval.dto.ManualTextSearchHit;
+import org.xhy.raglearn.application.retrieval.dto.ManualTextSearchResult;
 import org.xhy.raglearn.common.exception.BusinessException;
 import org.xhy.raglearn.domain.retrieval.gateway.ManualTextVectorGateway;
 import org.xhy.raglearn.domain.retrieval.model.ManualTextChunk;
@@ -12,8 +18,7 @@ import org.xhy.raglearn.domain.retrieval.repository.ManualTextChunkRepository;
 import org.xhy.raglearn.domain.retrieval.repository.ManualTextExperimentRepository;
 import org.xhy.raglearn.domain.retrieval.service.SimpleTextChunker;
 
-import java.util.List;
-
+@Service
 public class ManualTextRetrievalAppService {
 
     private final ManualTextExperimentRepository experimentRepository;
@@ -59,6 +64,30 @@ public class ManualTextRetrievalAppService {
                 experiment.chunkCount(),
                 chunks.stream()
                         .map(chunk -> new ManualTextChunkView(chunk.id(), chunk.chunkIndex(), chunk.content()))
+                        .toList()
+        );
+    }
+
+    public ManualTextSearchResult searchManualText(ManualTextSearchCommand command) {
+        if (!StringUtils.hasText(command.question())) {
+            throw new BusinessException("question must not be blank");
+        }
+
+        ManualTextExperiment experiment = experimentRepository.findById(command.experimentId())
+                .orElseThrow(() -> new BusinessException("Manual text experiment does not exist."));
+
+        int topK = command.normalizedTopK();
+        return new ManualTextSearchResult(
+                experiment.id(),
+                command.question(),
+                topK,
+                vectorGateway.search(experiment.id(), command.question(), topK).stream()
+                        .map(match -> new ManualTextSearchHit(
+                                match.score(),
+                                match.chunkId(),
+                                match.chunkIndex(),
+                                match.content()
+                        ))
                         .toList()
         );
     }

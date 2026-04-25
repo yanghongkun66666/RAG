@@ -6,7 +6,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.xhy.raglearn.application.retrieval.dto.ManualTextChunkView;
 import org.xhy.raglearn.application.retrieval.dto.ManualTextIndexCommand;
 import org.xhy.raglearn.application.retrieval.dto.ManualTextIndexResult;
@@ -49,14 +48,10 @@ class ManualTextIndexingAppServiceTest {
     private ManualTextRetrievalAppService appService;
 
     @Test
-    void staysAsPlainTaskTwoClassWithoutSpringRuntimeAnnotations() throws NoSuchMethodException {
-        Method indexMethod = ManualTextRetrievalAppService.class.getMethod(
-                "indexManualText",
-                ManualTextIndexCommand.class
-        );
-
-        assertFalse(ManualTextRetrievalAppService.class.isAnnotationPresent(Service.class));
-        assertFalse(indexMethod.isAnnotationPresent(Transactional.class));
+    void isSpringManagedForTaskThreeControllerWiring() {
+        assertFalse(ManualTextRetrievalAppService.class.isInterface());
+        assertFalse(ManualTextRetrievalAppService.class.isEnum());
+        assertEquals(true, ManualTextRetrievalAppService.class.isAnnotationPresent(Service.class));
     }
 
     @Test
